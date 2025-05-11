@@ -11,7 +11,7 @@ import SwiftUI
 struct UdemyApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView(showUsernameError: Binding.constant(false), showEmailError: Binding.constant(false), showPasswordError: Binding.constant(false))
+            ContentView()
         }
     }
 }

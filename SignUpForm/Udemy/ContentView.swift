@@ -7,127 +7,152 @@
 
 import SwiftUI
 
+// MARK: - Parent View
 struct ContentView: View {
-    @Binding var showUsernameError: Bool
-    @Binding var showEmailError: Bool
-    @Binding var showPasswordError: Bool
+    @State private var showUsernameError = false
+    @State private var showEmailError = false
+    @State private var showPasswordError = false
+
     var body: some View {
-        ChildView(username: "", password: "", email: "", userNameError: false, emailError: false, passwordError: false, showAlert: false)
-       
+        NavigationStack{
+            SignUpFormView(
+                showUsernameError: $showUsernameError,
+                showEmailError: $showEmailError,
+                showPasswordError: $showPasswordError
+            )
+        }
+        
     }
 }
 
-struct ChildView: View {
-    @State var username: String
-    @State var password: String
-    @State var email: String
-    @State var userNameError: Bool
-    @State var emailError: Bool
-    @State var passwordError: Bool
-    @State var showAlert: Bool
+// MARK: - Child (Reusable) View
+struct SignUpFormView: View {
+    @Binding var showUsernameError: Bool
+    @Binding var showEmailError: Bool
+    @Binding var showPasswordError: Bool
+
+    @State private var username: String = ""
+    @State private var email: String = ""
+    @State private var password: String = ""
+    @State private var showAlert: Bool = false
+    @State private var isLoading = false
+    @State private var isSuccess = false
+    @State private var navigateToHome = false
+
     var body: some View {
-        
-        ZStack() {
+        ZStack {
             Color.primaryTheme
-                .edgesIgnoringSafeArea(.all)
-            VStack(alignment: .leading,spacing: 20){
-                Text("SignUp")
-                    .foregroundStyle(.white)
-                    .font(.system(size: 30, weight: .bold))
-                Text("UserName")
-                    .foregroundStyle(.white)
-                    .font(.system(size: 16, weight: .bold))
-                TextField("Username", text: $username)
-                    .foregroundStyle(.black)
-                    .textFieldStyle(.roundedBorder)
-                    .textContentType(.username)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                if userNameError{
-                    Text("UserName should not be empty!")
-                        .foregroundStyle(.red)
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.top,-10)
-                }
-                Text("Email")
-                    .foregroundStyle(.white)
-                    .font(.system(size: 16, weight: .bold))
-                TextField("Email", text: $email)
-                    .foregroundStyle(.black)
-                    .textFieldStyle(.roundedBorder)
-                    .textContentType(.password)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                if emailError{
-                    Text("Email should not be empty!")
-                        .foregroundStyle(.red)
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.top,-10)
-                }
-                Text("Password")
-                    .foregroundStyle(.white)
-                    .font(.system(size: 16, weight: .bold))
-                SecureField("Password", text: $password)
-                    .foregroundStyle(.black)
-                    .textFieldStyle(.roundedBorder)
-                    .textContentType(.password)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                
-                if passwordError{
-                    Text("Password should not be empty!")
-                        .foregroundStyle(.red)
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.top,-10)
-                }
-                
-                Button {
-                    
-                    guard !username.isEmpty else {
-                        userNameError = true
-                        return
-                    }
-                    userNameError = false
-                    guard !email.isEmpty else {
-                        emailError = true
-                        return
-                    }
-                    emailError = false
-                    guard !password.isEmpty else {
-                        passwordError = true
-                        return
-                    }
-                    
-                   
-                    passwordError = false
-                    showAlert = true
-                   
-                } label: {
-                    Text("Submit")
-                        .foregroundStyle(.white)
-                        .font(.system(size: 20, weight: .bold))
-                      
-                        
-                }
-                .frame(maxWidth:.infinity)
-                .frame(height: 45)
-                .background(Color.black)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .padding(.top,20)
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 20) {
+                headerView
+                formField(title: "UserName", text: $username, showError: $showUsernameError, errorMessage: "UserName should not be empty!")
+                formField(title: "Email", text: $email, showError: $showEmailError, errorMessage: "Email should not be empty!")
+                formField(title: "Password", text: $password, showError: $showPasswordError, errorMessage: "Password should not be empty!", isSecure: true)
+
+                submitButton
 
                 Spacer()
-            }.padding()
-                .alert("Sign Up completed!", isPresented: $showAlert) {
-                    Text("Thanks for signing up!")
+            }
+            .padding()
+            .alert("Sign Up completed!", isPresented: $showAlert) {
+                Button("OK", role: .cancel) {
+                    navigateToHome = true
                 }
+            } message: {
+                Text("Thanks for signing up!")
+            }
+            .navigationDestination(isPresented: $navigateToHome) {
+                HomeView()
+            }
+        }
+    }
+
+    private var headerView: some View {
+        Text("SignUp")
+            .foregroundStyle(.white)
+            .font(.system(size: 30, weight: .bold))
+    }
+
+    @ViewBuilder
+    private func formField(title: String, text: Binding<String>, showError: Binding<Bool>, errorMessage: String, isSecure: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .foregroundStyle(.white)
+                .font(.system(size: 16, weight: .bold))
+
+            if isSecure {
+                SecureField(title, text: text)
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+                    .textContentType(.password)
+                    .textInputAutocapitalization(.never)
+            } else {
+                TextField(title, text: text)
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+            }
+
+            if showError.wrappedValue {
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+                    .font(.system(size: 12, weight: .bold))
+                    .padding(.top, 5)
+            }
+        }
+    }
+
+    private var submitButton: some View {
+        HStack {
+            Spacer()
             
+            Button(action: {
+                validateAndSubmit()
+            }) {
+                ZStack {
+                    if isSuccess {
+                        Image(systemName: "checkmark")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    } else if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Submit")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                    }
+                }
+                .frame(width: isLoading ? 60 : UIScreen.main.bounds.width - 64, height: 60)
+                .background(isSuccess ? Color.green : Color.blue)
+                .clipShape(Capsule())
+            }
+            .disabled(isLoading)
+
+            Spacer()
+        }
+        .padding(.top, 20)
+    }
+
+
+    private func validateAndSubmit() {
+        showUsernameError = username.isEmpty
+        showEmailError = email.isEmpty
+        showPasswordError = password.isEmpty
+
+        guard !showUsernameError && !showEmailError && !showPasswordError else { return }
+        withAnimation(.easeInOut(duration: 0.4)) {
+            isLoading = true
+        }
+
+        // In a real app, use encryption or keychain for password handling.
+        showAlert = true
+        if showAlert{
+            withAnimation(.easeInOut(duration: 0.4)) {
+                isSuccess = true
+            }
         }
        
     }
 }
-
-
-
-//#Preview {
-//    ContentView()
-//}
