@@ -67,12 +67,13 @@ struct ChildView: View {
                 Text("Password")
                     .foregroundStyle(.white)
                     .font(.system(size: 16, weight: .bold))
-                TextField("Password", text: $password)
+                SecureField("Password", text: $password)
                     .foregroundStyle(.black)
                     .textFieldStyle(.roundedBorder)
-                    .textContentType(.emailAddress)
+                    .textContentType(.password)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                
                 if passwordError{
                     Text("Password should not be empty!")
                         .foregroundStyle(.red)
